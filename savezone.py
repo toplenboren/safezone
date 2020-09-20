@@ -1,5 +1,6 @@
 # Savezone command processor
-# Handles savezone related commands
+# Handles savezone related commands, returns raw data, could be used as a library
+
 from typing import List
 
 from storage_registry import get_storage_by_name
