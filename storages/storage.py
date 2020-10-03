@@ -1,14 +1,15 @@
 from typing import List
 
-from models.models import File, StorageMetaInfo
+from models.models import Resource, StorageMetaInfo
 
 
 class Storage:
     """A storage abstract class"""
 
-    def list_items_in_dir(self, dir: str) -> List[File]:
+    def list_items_in_dir(self, dir: str, ) -> List[Resource]:
         """
         List all items in directory
+        :param dir: directory
         """
         pass
 
@@ -18,7 +19,7 @@ class Storage:
         """
         pass
 
-    def put_item_to_dir(self, item, dir: str) -> File or None:
+    def put_item_to_dir(self, item, dir: str) -> Resource or None:
         """
         Put an Item to the directory
         """

@@ -1,7 +1,7 @@
 from typing import List
 
 from .http_shortcuts import *
-from models.models import StorageMetaInfo, File
+from models.models import StorageMetaInfo, Resource
 from .storage import Storage
 
 
@@ -10,22 +10,57 @@ class YadiskStorage(Storage):
 
     def __init__(self, token):
         if token is None:
-            print('didnt have token!')
+            token = ''
         self.token = token
 
-    def list_items_in_dir(self, dir: str) -> List[File]:
+    @classmethod
+    def _deserialize_resource(cls, json: dict) -> Resource or None:
+        """
+        Tries to parse Resource from YD to Resource object
+        :param json:
+        :return:
+        """
+        try:
+            is_file = True
+            if json['type'] == 'dir':
+                is_file = False
+            path = json['path']
+        except KeyError:
+            return None
+        res = Resource(is_file, path)
+        res.size = json.get('size')
+        res.name = json.get('name')
+        res.url = json.get('file')
+        res.created = json.get('created')
+        res.md5 = json.get('md5')
+        return res
+
+    def list_resources_on_path(self, path: str) -> List[Resource]:
         """
         List all items in directory
+        :param path: path to the resource
         """
-        response = get_with_OAuth('https://cloud-api.yandex.net/v1/disk/resources',
-                                  params={'path': dir},
-                                  token=self.token)
-        if response.status_code == 200:
-            print(response)
-        else:
-            raise ValueError("Something went wrong with YD /r/n " + response.json())
 
-    def put_item_to_dir(self, item, dir: str) -> File or None:
+        response = get_with_OAuth('https://cloud-api.yandex.net/v1/disk/resources',
+                                  params={'path': path},
+                                  token=self.token)
+        print(response)
+        if response.status_code == 200:
+            result = []
+            response_as_json = response.json()
+            _embedded_objects = response_as_json['_embedded']
+
+            for resource in _embedded_objects:
+                res: Resource or None = self._deserialize_resource(resource)
+                if res is not None:
+                    result.append(res)
+
+            return result
+        else:
+            raise ValueError(f"Something went wrong with YD: Response: "
+                             f"{str(response.status_code)} — {response.json()['message']}")
+
+    def put_item_to_path(self, item, path: str) -> Resource or None:
         """
         Put an Item to the directory
         """
@@ -42,5 +77,5 @@ class YadiskStorage(Storage):
             total_space = response_read['total_space']
             return StorageMetaInfo(int(used_space), int(total_space))
         else:
-            raise ValueError(f"Something went wrong with YD: Статус ответа: "
+            raise ValueError(f"Something went wrong with YD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
