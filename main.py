@@ -1,13 +1,14 @@
 # Handles the input, uses typer as a framework
 # https://github.com/tiangolo/typer
 
-from typing import Optional
+from typing import Optional, List
 import savezone
 
 import typer
 
-from models.models import StorageMetaInfo
+from models.models import StorageMetaInfo, Resource
 from storage_registry import get_storage_true_name
+from templates import display_metainfo, display_resource_list, _display_exception
 
 app = typer.Typer()
 
@@ -21,51 +22,31 @@ def save(file: str, storage: str, token: str or None = None):
 
 
 @app.command()
-def meta(storage: str, token: str or None = None):
+def meta(storage_name: str, token: str or None = None):
     """
     Shows meta info of STORAGE
     """
 
-    def _get_percentage_color(p: float):
-
-        p = int(p)
-
-        if p >= 80:
-            return typer.colors.BRIGHT_BLUE
-        elif p >= 60:
-            return typer.colors.GREEN
-        elif p >= 40:
-            return typer.colors.YELLOW
-        elif p >= 20:
-            return typer.colors.BRIGHT_RED
-        else:
-            return typer.colors.RED
-
-    metainfo: StorageMetaInfo = savezone.meta(storage, token)
-
-    typer.echo('')
-    if get_storage_true_name(storage) == 'Yandex Disk':
-        typer.echo(f'Storage Name: {typer.style("Y", fg=typer.colors.RED)}andex Disk')
-    else:
-        typer.echo(f'Storage Name: {get_storage_true_name(storage)}')
-    typer.echo('')
-    typer.secho(f'Available space: {metainfo.available_space_display}',
-                fg=_get_percentage_color(metainfo.available_space_percentage),
-                bold=True)
-    typer.secho(f"That's {metainfo.available_space_percentage}%")
-    typer.echo('')
-    typer.echo(f'Used space: {metainfo.used_space_display}')
-    typer.echo(f'Total space: {metainfo.total_space_display}')
+    try:
+        metainfo: StorageMetaInfo = savezone.meta(storage_name, token)
+    except Exception as e:
+        _display_exception(e)
+        return
+    storage_name = get_storage_true_name(storage_name)
+    display_metainfo(storage_name, metainfo)
 
 
 @app.command()
-def list(storage: str, token: str or None = None, dir: Optional[str] = typer.Argument(None)):
+def list(storage_name: str, token: str or None = None, dir: Optional[str] = typer.Argument(None)):
     """
-    Lists all files in STORAGE in DIR
+    Lists all resources in STORAGE in DIR
     """
     if dir is None:
         dir = '/'
-    typer.echo(f"show list of files in {storage} by {dir}")
+    resource_list: List[Resource] = savezone.list(storage_name, dir, token=token)
+    typer.echo(f"show list of files in {storage_name} by {dir}")
+    storage_name = get_storage_true_name(storage_name)
+    display_resource_list(resource_list, storage_name)
 
 
 if __name__ == "__main__":

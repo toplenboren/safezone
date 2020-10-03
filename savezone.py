@@ -5,10 +5,10 @@ from typing import List
 
 from storage_registry import get_storage_by_name
 from storages.storage import Storage
-from models.models import File, StorageMetaInfo
+from models.models import Resource, StorageMetaInfo
 
 
-def list(storage_name: str, dir: str, token: str or None = None,) -> List[File]:
+def list(storage_name: str, dir: str, token: str or None = None,) -> List[Resource]:
     """
     List all files in DIR in STORAGE
     :param token: Access token to the storage
@@ -35,8 +35,8 @@ def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
 
 def save(path: str, storage_name: str) -> bool:
     """
-    Tries to save the file or directory by PATH in STORAGE
-    :param file: A path of the file or storage
+    Tries to save the resource by PATH in STORAGE
+    :param path: A path of the file or storage
     :param storage_name: Storage name
     :return: True if everything went OK
     """
