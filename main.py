@@ -29,7 +29,7 @@ def meta(storage_name: str, token: str or None = None):
 
     try:
         metainfo: StorageMetaInfo = savezone.meta(storage_name, token)
-    except Exception as e:
+    except KeyError as e:
         _display_exception(e)
         return
     storage_name = get_storage_true_name(storage_name)

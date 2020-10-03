@@ -11,6 +11,16 @@ STORAGES = [
     }
 ]
 
+NEW_LINE = '\r\n'
+
+
+def _storages_as_string() -> str:
+    res = []
+    for storage in STORAGES:
+        storage_str = [storage['name'], ' (', ', '.join(storage['synonyms']), ')']
+        res.append(''.join(storage_str))
+    return '\r\n'.join(res)
+
 
 def find_storage_by_synonym(name: str) -> dict:
     """
@@ -21,7 +31,11 @@ def find_storage_by_synonym(name: str) -> dict:
     for v in STORAGES:
         if name.lower() in v['synonyms']:
             return v
-    raise ValueError(f'There are no registered storage named {name}, list of registered storages is.../r/n' + STORAGES)
+
+    raise ValueError(
+        f'There are no registered storage named {name}{NEW_LINE}'
+        f'List of registered storages is...{NEW_LINE}'
+        f'{_storages_as_string()}')
 
 
 def get_storage_by_name(name: str) -> Storage:
