@@ -1,7 +1,8 @@
 from typing import List
 
+from models.utils import bytes_to_megabytes
 from .http_shortcuts import *
-from models.models import StorageMetaInfo, Resource
+from models.models import StorageMetaInfo, Resource, Size
 from .storage import Storage
 
 
@@ -28,7 +29,7 @@ class YadiskStorage(Storage):
         except KeyError:
             return None
         res = Resource(is_file, path)
-        res.size = json.get('size')
+        res.size = Size(json.get('size'), 'b') if json.get('size') else None
         res.name = json.get('name')
         res.url = json.get('file')
         res.created = json.get('created')
@@ -44,11 +45,10 @@ class YadiskStorage(Storage):
         response = get_with_OAuth('https://cloud-api.yandex.net/v1/disk/resources',
                                   params={'path': path},
                                   token=self.token)
-        print(response)
         if response.status_code == 200:
             result = []
             response_as_json = response.json()
-            _embedded_objects = response_as_json['_embedded']
+            _embedded_objects = response_as_json['_embedded']['items']
 
             for resource in _embedded_objects:
                 res: Resource or None = self._deserialize_resource(resource)
@@ -60,7 +60,7 @@ class YadiskStorage(Storage):
             raise ValueError(f"Something went wrong with YD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
 
-    def put_item_to_path(self, item, path: str) -> Resource or None:
+    def put_resource_to_path(self, item, path: str) -> Resource or None:
         """
         Put an Item to the directory
         """

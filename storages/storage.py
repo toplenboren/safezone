@@ -6,7 +6,7 @@ from models.models import Resource, StorageMetaInfo
 class Storage:
     """A storage abstract class"""
 
-    def list_items_in_dir(self, dir: str, ) -> List[Resource]:
+    def list_resources_on_path(self, dir: str, ) -> List[Resource]:
         """
         List all items in directory
         :param dir: directory
@@ -19,7 +19,7 @@ class Storage:
         """
         pass
 
-    def put_item_to_dir(self, item, dir: str) -> Resource or None:
+    def put_resource_to_path(self, item, dir: str) -> Resource or None:
         """
         Put an Item to the directory
         """

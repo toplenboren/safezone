@@ -1,13 +1,36 @@
 from models.utils import bytes_to_megabytes, kilobytes_to_megabytes
 
 
+class Size:
+    @classmethod
+    def kilobytes_to_megabytes(cls, kilobytes: int or float) -> float:
+        return kilobytes / 1024
+
+    @classmethod
+    def bytes_to_megabytes(cls, bytes: int or float) -> float:
+        return bytes / 1024 / 1024
+
+    # todo(toplenboren) add bytes processing
+    def __init__(self, size: float or int, units: str = 'b'):
+        self.size = size
+        self.units = units
+
+    @property
+    def mb(self):
+        return self.bytes_to_megabytes(self.size)
+
+    def __str__(self):
+        return f'{self.mb} {self.units}'
+
+
 class Resource:
     """A resource model"""
 
-    def __init__(self, is_file: bool, path: str, size: int or None = None, name: str or None = None, url: str or None = None):
+    def __init__(self, is_file: bool, path: str, size: int or None = None, size_units: str = 'b',
+                 name: str or None = None, url: str or None = None):
         self.is_file = is_file
         self.path = path
-        self.size = size
+        self.size = Size(size, size_units)
         self.name = name
         if not self.name and len(self.path.split('/')) > 0:
             self.name = self.path.split('/')[-1]
