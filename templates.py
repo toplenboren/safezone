@@ -6,7 +6,7 @@ from models.models import StorageMetaInfo, Resource
 from storage_registry import get_storage_true_name
 
 
-def _display_storage(storage_name) -> None:
+def _display_storage(storage_name: str) -> None:
     typer.echo('')
     if storage_name == 'Yandex Disk':
         typer.echo(f'Storage Name: {typer.style("Y", fg=typer.colors.RED)}andex Disk')
@@ -16,12 +16,13 @@ def _display_storage(storage_name) -> None:
 
 
 def display_metainfo(metainfo: StorageMetaInfo, storage_name: str) -> None:
+
     def _get_percentage_color(p: float):
 
         p = int(p)
 
         if p >= 80:
-            return typer.colors.BRIGHT_BLUE
+            return typer.colors.BRIGHT_GREEN
         elif p >= 60:
             return typer.colors.GREEN
         elif p >= 40:

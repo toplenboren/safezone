@@ -43,7 +43,7 @@ class StorageMetaInfo:
 
     @property
     def available_space_percentage(self) -> int:
-        return int(100 * self.used_space / self.total_space)
+        return int(100 * self.available_space / self.total_space)
 
     @property
     def used_space_display(self) -> str:

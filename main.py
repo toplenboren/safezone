@@ -33,7 +33,7 @@ def meta(storage_name: str, token: str or None = None):
         _display_exception(e)
         return
     storage_name = get_storage_true_name(storage_name)
-    display_metainfo(storage_name, metainfo)
+    display_metainfo(metainfo, storage_name)
 
 
 @app.command()
