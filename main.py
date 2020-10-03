@@ -37,7 +37,10 @@ def meta(storage_name: str, token: str or None = None):
 
 
 @app.command()
-def list(storage_name: str, token: str or None = None, dir: Optional[str] = typer.Argument(None)):
+def list(storage_name: str,
+         token: str or None = None,
+         dir: Optional[str] = typer.Argument(None),
+         detailed: Optional[bool] = False):
     """
     Lists all resources in STORAGE in DIR
     """
@@ -46,7 +49,7 @@ def list(storage_name: str, token: str or None = None, dir: Optional[str] = type
     resource_list: List[Resource] = savezone.list(storage_name, dir, token=token)
     typer.echo(f"show list of files in {storage_name} by {dir}")
     storage_name = get_storage_true_name(storage_name)
-    display_resource_list(resource_list, storage_name)
+    display_resource_list(resource_list, storage_name, detailed)
 
 
 if __name__ == "__main__":

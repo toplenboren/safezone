@@ -18,7 +18,7 @@ def list(storage_name: str, dir: str, token: str or None = None,) -> List[Resour
     """
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
-    return storage.list_items_in_dir(dir)
+    return storage.list_resources_on_path(dir)
 
 
 def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
