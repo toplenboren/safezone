@@ -1,6 +1,5 @@
 from typing import List
 
-from models.utils import bytes_to_megabytes
 from .http_shortcuts import *
 from models.models import StorageMetaInfo, Resource, Size
 from .storage import Storage
@@ -60,12 +59,6 @@ class YadiskStorage(Storage):
             raise ValueError(f"Something went wrong with YD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
 
-    def put_resource_to_path(self, item, path: str) -> Resource or None:
-        """
-        Put an Item to the directory
-        """
-        pass
-
     def get_meta_info(self) -> StorageMetaInfo:
         """
         Gets meta info of storage
@@ -79,3 +72,44 @@ class YadiskStorage(Storage):
         else:
             raise ValueError(f"Something went wrong with YD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
+
+    def save_resource_to_path(self, resource: Resource, remote_path: str) -> Resource or None:
+        """
+        Put an Item to the directory
+        :param resource: resource on the local fs
+        :param remote_path: string, path to resource on remote fs
+        :return: saved resource or raises exception
+        """
+
+        upload_successful_flag = False
+
+        if remote_path == '/':
+            remote_path = resource.name
+        else:
+            if remote_path[-1] == '/':
+                remote_path += resource.name
+            else:
+                remote_path += f'/{resource.name}'
+
+        response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}',
+                                  token=self.token)
+        if response.status_code == 200:
+            response_read = response.json()
+            upload_link = response_read['href']
+
+            with open(resource.path, 'rb') as f:
+                files = f
+                response = put_with_OAuth(upload_link, data=files)
+                if 199 < response.status_code < 401:
+                    upload_successful_flag = True
+
+            response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={remote_path}',
+                                      token=self.token)
+            resource_metainfo = self._deserialize_resource(response.json())
+            if response.status_code == 200:
+                return resource_metainfo
+            elif upload_successful_flag:
+                return resource
+
+        raise ValueError(f"Something went wrong with YD: Response: "
+                         f"{str(response.status_code)} — {response.json().get('message', '')}")

@@ -19,8 +19,8 @@ class Storage:
         """
         pass
 
-    def put_resource_to_path(self, item, dir: str) -> Resource or None:
+    def save_resource_to_path(self, resource: Resource, remote_path: str) -> Resource or None:
         """
-        Put an Item to the directory
+        Put a resource to the directory
         """
         pass
