@@ -1,6 +1,6 @@
 # Savezone command processor
 # Handles savezone related commands, returns raw data, could be used as a library
-
+import os
 from typing import List
 
 from storage_registry import get_storage_by_name
@@ -33,11 +33,24 @@ def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
     return storage.get_meta_info()
 
 
-def save(path: str, storage_name: str) -> bool:
+def save(resource_path: str, remote_path: str, storage_name: str, token) -> Resource or None:
     """
     Tries to save the resource by PATH in STORAGE
-    :param path: A path of the file or storage
+    :param resource_path: A local path to the file to save
+    :param remote_path: A path on the remote to save to
+    :param token: An access token to the storage
     :param storage_name: Storage name
-    :return: True if everything went OK
+    :return: saved Resource if everything went OK or raises exception
     """
-    pass
+    if os.path.isfile(resource_path):
+        storage_class = get_storage_by_name(storage_name)
+        storage: Storage = storage_class(token=token)
+        try:
+            open(resource_path, 'rb')
+        except PermissionError or FileNotFoundError:
+            raise ValueError(f'Object on {resource_path} couldn`t be opened')
+        resource = Resource(True, resource_path)
+        return storage.save_resource_to_path(resource, remote_path)
+    else:
+        raise ValueError(f'Object on {resource_path} is not file')
+
