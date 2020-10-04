@@ -7,7 +7,7 @@ from models.models import StorageMetaInfo, Resource, Size
 from storage_registry import get_storage_true_name
 
 
-def _to_fixed(num: int or float, digits=2):
+def _to_fixed(num: int or float, digits=2) -> str:
     return f"{num:.{digits}f}"
 
 
@@ -88,6 +88,14 @@ def display_resource_list(resource_list: List[Resource], storage_name: str, deta
     typer.echo(tabulate(table, headers))
 
 
-def _display_exception(e: Exception) -> None:
+def display_exception(e: Exception) -> None:
     typer.echo(':(')
     typer.secho(' '.join(e.args), fg=typer.colors.RED)
+
+
+def display_resource(resource: Resource, storage_name: str) -> None:
+    _display_storage(storage_name)
+    typer.secho('Successfully uploaded the resource: ', fg=typer.colors.BRIGHT_GREEN)
+    typer.echo(f'Name: {resource.name}')
+    typer.echo(f'Path: {resource.path}')
+    typer.echo(f'Size: {_to_fixed(resource.size.mb)} Mb')
