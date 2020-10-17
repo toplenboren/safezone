@@ -14,9 +14,25 @@ app = typer.Typer()
 
 
 @app.command()
+def backup(storage_name: str, resource: str, remote: str = '/', token: str or None = None) -> None:
+    """
+    Backs the resource in the storage name
+    :param token: An access token to the storage
+    :param remote: A path on the remote storage to save to, defaults to '/'
+    :param resource: A path to the resource
+    :param storage_name: the name of the storage
+    :param path: a path to be backed up
+    :return:
+    """
+    backed_up_resource = savezone.backup(storage_name, resource, remote, token)
+
+
+@app.command()
 def save(storage_name: str, resource: str, remote: str = '/', token: str or None = None):
     """
     Saves a RESOURCE in STORAGE \r\n
+    :param resource: A path to the resource
+    :param storage_name: A storage name
     :param remote: A path on the remote storage to save to, defaults to '/'
     :param token: An access token to the storage
     """
