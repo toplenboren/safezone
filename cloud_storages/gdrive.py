@@ -1,4 +1,4 @@
-from storages.storage import Storage
+from cloud_storages.storage import Storage
 
 
 class GoogleDriveStorage(Storage):

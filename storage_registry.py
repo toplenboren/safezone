@@ -1,7 +1,7 @@
-# Resolves storages
+# Resolves cloud_storages
 
-from storages.storage import Storage
-from storages.yadisk import YadiskStorage
+from cloud_storages.storage import Storage
+from cloud_storages.yadisk import YadiskStorage
 
 STORAGES = [
     {
@@ -34,7 +34,7 @@ def find_storage_by_synonym(name: str) -> dict:
 
     raise ValueError(
         f'There are no registered storage named {name}{NEW_LINE}'
-        f'List of registered storages is...{NEW_LINE}'
+        f'List of registered cloud_storages is...{NEW_LINE}'
         f'{_storages_as_string()}')
 
 
