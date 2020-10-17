@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import List
+
 from models.utils import bytes_to_megabytes, kilobytes_to_megabytes
 
 
@@ -82,3 +85,27 @@ class StorageMetaInfo:
 
     def __str__(self):
         return f'{self.used_space_display} / {self.total_space_display}'
+
+
+class Backup:
+    """A backup model"""
+
+    def __init__(self, date: datetime, resources: List[Resource], storage: str, path: str):
+        """
+        :param date: A date of the backup
+        :param resources: A list of the resources that have been backed up
+        :param storage: A name of the storage that was responsible for the backup
+        :param path: A path to the backup on the storage
+        """
+        self.date = date
+        self.resources = resources
+        self.storage = storage
+        self.path = path
+
+    def _toJson(self) -> str:
+        """Serializes the object to JSON"""
+        pass
+
+    def _save(self) -> None:
+        """Saves the object in database"""
+        pass
