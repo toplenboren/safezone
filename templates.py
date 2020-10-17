@@ -67,6 +67,7 @@ def display_resource_list(resource_list: List[Resource], storage_name: str, deta
     if not detailed:
         for resource in resource_list:
             typer.secho(resource.name, fg=_get_color_by_type(resource.is_file))
+        return
 
     headers = [
         'Name',
