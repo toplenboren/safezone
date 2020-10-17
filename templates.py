@@ -3,7 +3,7 @@ from typing import List
 import typer
 from tabulate import tabulate
 
-from models.models import StorageMetaInfo, Resource, Size
+from models.models import StorageMetaInfo, Resource, Size, Backup
 from storage_registry import get_storage_true_name
 
 
@@ -100,3 +100,7 @@ def display_resource(resource: Resource, storage_name: str) -> None:
     typer.echo(f'Name: {resource.name}')
     typer.echo(f'Path: {resource.path}')
     typer.echo(f'Size: {_to_fixed(resource.size.mb)} Mb')
+
+
+def display_backup(backup: Backup, storage_name: str) -> None:
+    pass
