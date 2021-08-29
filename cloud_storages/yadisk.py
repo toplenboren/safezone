@@ -6,8 +6,7 @@ from .storage import Storage
 
 
 class YadiskStorage(Storage):
-    # todo(toplenboren) mv this to .env...
-    ACCESS_TOKEN = '684404c2a24f4c46a7ea73447888e225'
+    APP_ID = '684404c2a24f4c46a7ea73447888e225'
 
     def __init__(self, token):
         if token is None:
