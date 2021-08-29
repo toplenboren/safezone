@@ -29,13 +29,13 @@ Back up directory or file:
 Restore directory or file:
 
 ```
-`python main.py restore <name> -s <storage> -t <target>`
+python main.py restore <name> -s <storage> -t <target>
 ```
 
 Get meta information about the storage:
 
 ```
-`python main.py meta -s <storage>`
+python main.py meta -s <storage>
 ```
 
 
