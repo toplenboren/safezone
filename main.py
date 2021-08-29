@@ -12,19 +12,28 @@ from templates import display_metainfo, display_resource_list, display_exception
 
 app = typer.Typer()
 
+REGISTERED_STORAGES = ['yandex','google']
 
 @app.command()
-def backup(storage_name: str, resource: str, remote: str = '/', token: str or None = None) -> None:
+def backup(
+    resource: str,
+    storage_name: str = typer.Option('yandex', '-s'),
+    target: str = typer.Option('/', '-t'),
+    token: str or None = None,
+    overwrite: bool = typer.Option(False, '-o')
+) -> None:
     """
-    Backs the resource in the storage name
-    :param token: An access token to the storage
-    :param remote: A path on the remote storage to save to, defaults to '/'
+    Backs the resource in the storage name \r\n
     :param resource: A path to the resource
     :param storage_name: the name of the storage
-    :param path: a path to be backed up
+    :param target: A path on the remote storage to save to, defaults to '/'
+    :param oauth: An access token to the storage
     :return:
     """
-    backed_up_resource = savezone.backup(storage_name, resource, remote, token)
+    if storage_name not in REGISTERED_STORAGES:
+        raise ValueError(f'Storage name must be either yandex or google. Found {storage_name}')
+    saved_resource = savezone.backup(resource, target, storage_name, token)
+    #backed_up_resource = savezone.backup(storage_name, resource, remote, oauth)
 
 
 @app.command()

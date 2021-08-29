@@ -49,13 +49,15 @@ def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
     return storage.get_meta_info()
 
 
-def save(resource_path: str, remote_path: str, storage_name: str, token) -> Resource or None:
+def save(resource_path: str, remote_path: str, storage_name: str, token, overwrite: bool) -> Resource or None:
     """
     Tries to save the resource by PATH in STORAGE
+
     :param resource_path: A local path to the file to save
     :param remote_path: A path on the remote to save to
     :param token: An access token to the storage
     :param storage_name: Storage name
+
     :return: saved Resource if everything went OK or raises exception
     :raises: ValueError if something went wrong
     """
@@ -68,24 +70,28 @@ def save(resource_path: str, remote_path: str, storage_name: str, token) -> Reso
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
 
 
-def backup(storage_name: str, resource_path: str, remote_path: str, token: str or None = None) -> Backup:
+def backup(resource_path: str, remote_path: str, storage_name: str,  token: str or None = None) -> Backup:
     """
-    Saves resource from resource_path to the cloud. Remembers and resolves backup
-    :param storage_name: Storage name
-    :param resource_path: A path to the local resources
-    :param remote_path: A path on the remote storage to save to, defaults to '/'
+    Saves resource from resource_path to the cloud. Resolves access token and provides additional business logic
+
+    :param resource_path: A local path to the file to save
+    :param remote_path: A path on the remote to save to
     :param token: An access token to the storage
-    :return: saved Backup if everything went ok
+    :param storage_name: Storage name
+
+    :return: saved Resource if everything went OK or raises exception
     :raises: ValueError if something went wrong
     """
-    if _check_resource(resource_path):
-        storage_class = get_storage_by_name(storage_name)
-        storage: Storage = storage_class(token=token)
-        resource = Resource(True, resource_path)
-        saved_resource = storage.save_resource_to_path(resource, remote_path)
-        return Backup(datetime.now(), [saved_resource], storage_name, remote_path)
-    else:
+    if not _check_resource(resource_path):
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
+    if not token:
+        pass
+
+    storage_class = get_storage_by_name(storage_name)
+    storage: Storage = storage_class(token=token)
+    resource = Resource(True, resource_path)
+    saved_resource = storage.save_resource_to_path(resource, remote_path)
+    return Backup(datetime.now(), [saved_resource], storage_name, remote_path)
 
 
 def restore(backup_id: str, path_to_restore: str) -> None:
