@@ -6,12 +6,16 @@ from .storage import Storage
 
 
 class YadiskStorage(Storage):
-    APP_ID = '684404c2a24f4c46a7ea73447888e225'
 
     def __init__(self, token):
-        if token is None:
-            token = ''
         self.token = token
+
+    @classmethod
+    def get_oauth_request_url(cls):
+        app_id = '684404c2a24f4c46a7ea73447888e225'
+        token_url = f'https://oauth.yandex.ru/authorize?response_type=token&client_id={app_id}'
+        return token_url
+
 
     @classmethod
     def _deserialize_resource(cls, json: dict) -> Resource or None:

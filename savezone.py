@@ -6,6 +6,7 @@ from typing import List
 
 from storage_registry import get_storage_by_name
 from cloud_storages.storage import Storage
+from database.storage import Storage as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
 
 
@@ -85,7 +86,10 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
     if not _check_resource(resource_path):
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
     if not token:
-        pass
+        database = DBStorage()
+        token_from_storage = database.get(storage_name)
+        if not token_from_storage:
+            raise ValueError(f'No auth token was found. Please run: python main.py auth -s {storage_name}')
 
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)

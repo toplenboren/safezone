@@ -1,18 +1,38 @@
 # Handles the input, uses typer as a framework
 # https://github.com/tiangolo/typer
 
-from typing import Optional, List
 import savezone
-
+import os
 import typer
+import webbrowser
 
+from cloud_storages.yadisk import YadiskStorage
+from database.storage import Storage
 from models.models import StorageMetaInfo, Resource
-from storage_registry import get_storage_true_name
+from typing import Optional, List
+
+from oauth_handler.app import launch_oauth_handler_app
+from storage_registry import get_storage_true_name, get_storage_by_name
 from templates import display_metainfo, display_resource_list, display_exception, display_resource
 
 app = typer.Typer()
 
-REGISTERED_STORAGES = ['yandex','google']
+
+@app.command()
+def auth(
+    storage_name: str = typer.Option('yandex', '-s'),
+) -> None:
+    # Get request URI
+    storage = get_storage_by_name(storage_name)
+    request_uri = storage.get_oauth_request_url()
+    # Open OAuth request URI
+    webbrowser.open(request_uri)
+    print('Please continue in web browser')
+    # Start flask web server as daemon
+    database = Storage()
+    launch_oauth_handler_app(database, storage_name)
+    exit(0)
+
 
 @app.command()
 def backup(
@@ -30,10 +50,7 @@ def backup(
     :param oauth: An access token to the storage
     :return:
     """
-    if storage_name not in REGISTERED_STORAGES:
-        raise ValueError(f'Storage name must be either yandex or google. Found {storage_name}')
     saved_resource = savezone.backup(resource, target, storage_name, token)
-    #backed_up_resource = savezone.backup(storage_name, resource, remote, oauth)
 
 
 @app.command()

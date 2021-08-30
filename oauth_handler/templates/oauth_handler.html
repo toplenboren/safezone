@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Savezone OAuth</title>
+    <style>
+        p {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <p id="status">Acquiring token...</p>
+</body>
+<script>
+    const setStatus = (newText) => {
+        const statusNode = document.getElementById('status')
+        statusNode.innerText = newText
+    }
+
+    const hash = window.location.hash
+    const params = hash.replace('#', '')
+    const searchParams = new URLSearchParams(params);
+    const token = searchParams.get('access_token')
+
+    if (!token) {
+        setStatus('There were no token present. Please re run the app')
+    }
+
+    fetch(`http://localhost:5000/token/?value=${token}`).then(resp => {
+        if (resp.ok) {
+            setStatus('Token successfully acquired! You may close this window now and start using utility')
+        } else {
+            setStatus(`Something went wrong. Your access token is ${token} – use it with --token flag`)
+        }
+    }).then(_ => {fetch(`http://localhost:5000/kill/`)})
+</script>
+</html>
