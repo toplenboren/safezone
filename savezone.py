@@ -90,6 +90,7 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
         token_from_storage = database.get(storage_name)
         if not token_from_storage:
             raise ValueError(f'No auth token was found. Please run: python main.py auth -s {storage_name}')
+        token = token_from_storage
 
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
