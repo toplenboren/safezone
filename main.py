@@ -8,7 +8,7 @@ import webbrowser
 
 from cloud_storages.yadisk import YadiskStorage
 from database.storage import Storage
-from models.models import StorageMetaInfo, Resource
+from models.models import StorageMetaInfo, Resource, Backup
 from typing import Optional, List
 
 from oauth_handler.app import launch_oauth_handler_app
@@ -50,7 +50,8 @@ def backup(
     :param oauth: An access token to the storage
     :return:
     """
-    saved_resource = savezone.backup(resource, target, storage_name, token, overwrite)
+    saved_resource: Backup = savezone.backup(resource, target, storage_name, token, overwrite)
+    display_resource(saved_resource.resources[0], storage_name)
 
 
 @app.command()

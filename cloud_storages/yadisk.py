@@ -127,7 +127,7 @@ class YadiskStorage(Storage):
             print(f'$[{__name__}]: Directory does not exist on YDisk, creating...')
             response = put_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={BASE_DIRECTORY}', token=self.token)
             if 199 < response.status_code < 401:
-                self.save_resource_to_path(resource, remote_path, overwrite)
+                return self.save_resource_to_path(resource, remote_path, overwrite)
 
         raise ValueError(f"Something went wrong with YD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
