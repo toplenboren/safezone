@@ -1,14 +1,43 @@
 # Savezone command processor
 # Handles savezone related commands, returns raw data, could be used as a library
-from datetime import datetime
 import os
-from typing import List
+import base64
+import pathlib
+from typing import List, Tuple
+from datetime import datetime
 
 from settings import BASE_DIRECTORY
 from storage_registry import get_storage_by_name
 from cloud_storages.storage import Storage
 from database.storage import Storage as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
+
+
+DELIMITER = '-'
+ENCODING = 'utf-8'
+DATETIME_FORMAT = '%d%m%Y%H%M%S'
+
+
+# todo (toplenboren) DOES NOT WORK ON WIN
+# https://stackoverflow.com/questions/8384737/extract-file-name-from-path-no-matter-what-the-os-path-format
+def _encode_resource_id(path: str) -> str:
+    abspath = os.path.abspath(path)
+    file_name = os.path.basename(abspath)
+    return DELIMITER.join([(base64.b32encode(bytes(abspath, ENCODING)).decode(ENCODING)), file_name])
+
+
+def _decode_resource_id(resource_id: str) -> Tuple[str, str]:
+    abspath_b64, file_name = resource_id.split(DELIMITER)
+    return base64.b32decode(abspath_b64).decode(ENCODING), file_name
+
+
+def _get_current_date() -> str:
+    now = datetime.now()
+    return now.strftime(DATETIME_FORMAT)
+
+
+def _parse_date(date) -> datetime:
+    pass
 
 
 def _restore_token(storage_name) -> str:
@@ -91,11 +120,20 @@ def backup(resource_path: str, remote_path: str, storage_name: str, token: str o
         token = _restore_token(storage_name)
 
     # If remote path is not specified - then make it!
+    # /<BASE>/<ID>/<DATETIME>
     if remote_path in ['/', '']:
-        resource_name = resource_path.split('/')[-1]
-        remote_path = '/'.join([BASE_DIRECTORY, resource_name])
+        resource_id = _encode_resource_id(resource_path)
+        current_date = _get_current_date()
+        remote_path = '/'.join([BASE_DIRECTORY, resource_id, current_date])
+        print(f'[{__name__}] Calculated resource_id - {resource_id}')
+    # If remote path is specified we mount this lad to custom directory
+    # todo (toplenboren) learn how to process complex pathes
     else:
-        remote_path = BASE_DIRECTORY + '/' + remote_path
+        file_name = os.path.basename(resource_path)
+        remote_path = BASE_DIRECTORY + '-custom/' + remote_path + '/' + file_name
+        print(f'[{__name__}] Saving on external path... {remote_path}. '
+              f'Note: You wont be able to fully use this util using -t argument.'
+              f' Consider using automatic method instead (leave the -t empty)')
 
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
