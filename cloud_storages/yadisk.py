@@ -87,14 +87,6 @@ class YadiskStorage(Storage):
 
         upload_successful_flag = False
 
-        if remote_path == '/':
-            remote_path = resource.name
-        else:
-            if remote_path[-1] == '/':
-                remote_path += resource.name
-            else:
-                remote_path += f'/{resource.name}'
-
         response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}',
                                   token=self.token)
         if response.status_code == 200:

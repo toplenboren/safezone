@@ -10,6 +10,10 @@ from database.storage import Storage as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
 
 
+# Savezone saves everything to base directory
+BASE_DIRECTORY = 'savezone'
+
+
 def _check_resource(resource_path: str) -> bool:
     """
     Checks if the resource is file and accessible, or checks that all resources in directory are files and accessible
@@ -83,8 +87,10 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
     :return: saved Resource if everything went OK or raises exception
     :raises: ValueError if something went wrong
     """
+
     if not _check_resource(resource_path):
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
+
     if not token:
         database = DBStorage()
         token_from_storage = database.get(storage_name)
@@ -92,9 +98,17 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
             raise ValueError(f'No auth token was found. Please run: python main.py auth -s {storage_name}')
         token = token_from_storage
 
+    # If remote path is not specified - then make it!
+    if remote_path in ['/', '']:
+        resource_name = resource_path.split('/')[-1]
+        remote_path = '/'.join([BASE_DIRECTORY, resource_name])
+    else:
+        remote_path = BASE_DIRECTORY + '/' + remote_path
+
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
     resource = Resource(True, resource_path)
+    print(resource, remote_path)
     saved_resource = storage.save_resource_to_path(resource, remote_path)
     return Backup(datetime.now(), [saved_resource], storage_name, remote_path)
 
