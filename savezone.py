@@ -4,14 +4,11 @@ from datetime import datetime
 import os
 from typing import List
 
+from settings import BASE_DIRECTORY
 from storage_registry import get_storage_by_name
 from cloud_storages.storage import Storage
 from database.storage import Storage as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
-
-
-# Savezone saves everything to base directory
-BASE_DIRECTORY = 'savezone'
 
 
 def _check_resource(resource_path: str) -> bool:
@@ -75,7 +72,7 @@ def save(resource_path: str, remote_path: str, storage_name: str, token, overwri
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
 
 
-def backup(resource_path: str, remote_path: str, storage_name: str,  token: str or None = None) -> Backup:
+def backup(resource_path: str, remote_path: str, storage_name: str,  token: str or None = None, overwrite: bool = False) -> Backup:
     """
     Saves resource from resource_path to the cloud. Resolves access token and provides additional business logic
 
@@ -108,8 +105,7 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
     resource = Resource(True, resource_path)
-    print(resource, remote_path)
-    saved_resource = storage.save_resource_to_path(resource, remote_path)
+    saved_resource = storage.save_resource_to_path(resource, remote_path, overwrite)
     return Backup(datetime.now(), [saved_resource], storage_name, remote_path)
 
 

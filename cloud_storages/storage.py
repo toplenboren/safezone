@@ -19,7 +19,7 @@ class Storage:
         """
         pass
 
-    def save_resource_to_path(self, resource: Resource, remote_path: str) -> Resource or None:
+    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool) -> Resource or None:
         """
         Put a resource to the directory
         """

@@ -50,7 +50,7 @@ def backup(
     :param oauth: An access token to the storage
     :return:
     """
-    saved_resource = savezone.backup(resource, target, storage_name, token)
+    saved_resource = savezone.backup(resource, target, storage_name, token, overwrite)
 
 
 @app.command()

@@ -1,5 +1,6 @@
 from typing import List
 
+from settings import BASE_DIRECTORY
 from .http_shortcuts import *
 from models.models import StorageMetaInfo, Resource, Size
 from .storage import Storage
@@ -77,7 +78,22 @@ class YadiskStorage(Storage):
             raise ValueError(f"Something went wrong with YD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
 
-    def save_resource_to_path(self, resource: Resource, remote_path: str) -> Resource or None:
+    def create_path(self, remote_path: str) -> None:
+        """
+        Creates the remote path on yandex disk recursively
+        """
+        path = remote_path.split('/')
+
+        if len(path) == 0:
+            return
+
+        path_to_create = path[0]
+        response = put_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={path_to_create}',
+                                  token=self.token)
+        if 199 < response.status_code < 401:
+            self.create_path('/'.join(path[1::]))
+
+    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool) -> Resource or None:
         """
         Put an Item to the directory
         :param resource: resource on the local fs
@@ -87,7 +103,7 @@ class YadiskStorage(Storage):
 
         upload_successful_flag = False
 
-        response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}',
+        response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}&overwrite=${overwrite}',
                                   token=self.token)
         if response.status_code == 200:
             response_read = response.json()
@@ -102,10 +118,16 @@ class YadiskStorage(Storage):
             response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={remote_path}',
                                       token=self.token)
             resource_metainfo = self._deserialize_resource(response.json())
-            if response.status_code == 200:
+            if 199 < response.status_code < 401:
                 return resource_metainfo
             elif upload_successful_flag:
                 return resource
+        # There are no base directory folder
+        elif response.status_code == 409:
+            print(f'$[{__name__}]: Directory does not exist on YDisk, creating...')
+            response = put_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={BASE_DIRECTORY}', token=self.token)
+            if 199 < response.status_code < 401:
+                self.save_resource_to_path(resource, remote_path, overwrite)
 
         raise ValueError(f"Something went wrong with YD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
