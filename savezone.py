@@ -11,6 +11,14 @@ from database.storage import Storage as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
 
 
+def _restore_token(storage_name) -> str:
+    database = DBStorage()
+    token_from_storage = database.get(storage_name)
+    if not token_from_storage:
+        raise ValueError(f'No auth token was found. Please run: python main.py auth -s {storage_name}')
+    return token_from_storage
+
+
 def _check_resource(resource_path: str) -> bool:
     """
     Checks if the resource is file and accessible, or checks that all resources in directory are files and accessible
@@ -26,17 +34,24 @@ def _check_resource(resource_path: str) -> bool:
     return False
 
 
-def list(storage_name: str, dir: str, token: str or None = None, ) -> List[Resource]:
+def list(storage_name: str, remote_path: str, token: str or None = None) -> List[Resource]:
     """
     List all files in DIR in STORAGE
     :param token: Access token to the storage
     :param storage_name: Storage name
-    :param dir: Path to the resource
+    :param remote_path: Path to the resource§
     :return: List of File objects
     """
+
+    if not token:
+        token = _restore_token(storage_name)
+
+    if remote_path in ['/', '', None]:
+        remote_path = BASE_DIRECTORY
+
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
-    return storage.list_resources_on_path(dir)
+    return storage.list_resources_on_path(remote_path)
 
 
 def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
@@ -46,33 +61,17 @@ def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
     :param storage_name: Storage name
     :return: A StorageMetaInfo object
     """
+
+    if not token:
+        token = _restore_token(storage_name)
+
     storage_class = get_storage_by_name(storage_name)
     storage: Storage = storage_class(token=token)
     return storage.get_meta_info()
 
 
-def save(resource_path: str, remote_path: str, storage_name: str, token, overwrite: bool) -> Resource or None:
-    """
-    Tries to save the resource by PATH in STORAGE
-
-    :param resource_path: A local path to the file to save
-    :param remote_path: A path on the remote to save to
-    :param token: An access token to the storage
-    :param storage_name: Storage name
-
-    :return: saved Resource if everything went OK or raises exception
-    :raises: ValueError if something went wrong
-    """
-    if _check_resource(resource_path):
-        storage_class = get_storage_by_name(storage_name)
-        storage: Storage = storage_class(token=token)
-        resource = Resource(True, resource_path)
-        return storage.save_resource_to_path(resource, remote_path)
-    else:
-        raise ValueError(f'Object on {resource_path} couldn`t be opened')
-
-
-def backup(resource_path: str, remote_path: str, storage_name: str,  token: str or None = None, overwrite: bool = False) -> Backup:
+def backup(resource_path: str, remote_path: str, storage_name: str, token: str or None = None,
+           overwrite: bool = False) -> Backup:
     """
     Saves resource from resource_path to the cloud. Resolves access token and provides additional business logic
 
@@ -89,11 +88,7 @@ def backup(resource_path: str, remote_path: str, storage_name: str,  token: str 
         raise ValueError(f'Object on {resource_path} couldn`t be opened')
 
     if not token:
-        database = DBStorage()
-        token_from_storage = database.get(storage_name)
-        if not token_from_storage:
-            raise ValueError(f'No auth token was found. Please run: python main.py auth -s {storage_name}')
-        token = token_from_storage
+        token = _restore_token(storage_name)
 
     # If remote path is not specified - then make it!
     if remote_path in ['/', '']:

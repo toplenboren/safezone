@@ -55,25 +55,7 @@ def backup(
 
 
 @app.command()
-def save(storage_name: str, resource: str, remote: str = '/', token: str or None = None):
-    """
-    Saves a RESOURCE in STORAGE \r\n
-    :param resource: A path to the resource
-    :param storage_name: A storage name
-    :param remote: A path on the remote storage to save to, defaults to '/'
-    :param token: An access token to the storage
-    """
-    # try:
-    saved_resource: Resource = savezone.save(resource, remote, storage_name, token)
-    display_resource(saved_resource, storage_name)
-    # except LookupError as e:
-    #    display_exception(e)
-    #    return
-    # display_saved_resource_report
-
-
-@app.command()
-def meta(storage_name: str, token: str or None = None):
+def meta(storage_name: str = typer.Option('yandex', '-s'), token: str or None = typer.Option(None, '-t')):
     """
     Shows meta info of STORAGE
     """
@@ -87,17 +69,15 @@ def meta(storage_name: str, token: str or None = None):
 
 
 @app.command()
-def list(storage_name: str,
+def list(storage_name: str = typer.Option('yandex', '-s'),
          token: str or None = None,
-         dir: Optional[str] = typer.Argument(None),
+         remote_path: Optional[str] = typer.Argument(None),
          detailed: Optional[bool] = False):
     """
     Lists all resources in STORAGE in DIR
     """
-    if dir is None:
-        dir = '/'
-    resource_list: List[Resource] = savezone.list(storage_name, dir, token=token)
-    typer.echo(f"show list of files in {storage_name} by {dir}")
+    resource_list: List[Resource] = savezone.list(storage_name, remote_path, token=token)
+    typer.echo(f"show list of files in {storage_name} by {remote_path}")
     storage_name = get_storage_true_name(storage_name)
     display_resource_list(resource_list, storage_name, detailed)
 

@@ -40,14 +40,14 @@ class YadiskStorage(Storage):
         res.md5 = json.get('md5')
         return res
 
-    def list_resources_on_path(self, path: str) -> List[Resource]:
+    def list_resources_on_path(self, remote_path: str) -> List[Resource]:
         """
         List all items in directory
         :param path: path to the resource
         """
 
         response = get_with_OAuth('https://cloud-api.yandex.net/v1/disk/resources',
-                                  params={'path': path},
+                                  params={'path': remote_path},
                                   token=self.token)
         if response.status_code == 200:
             result = []
