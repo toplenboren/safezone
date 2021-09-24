@@ -2,7 +2,6 @@
 # Handles savezone related commands, returns raw data, could be used as a library
 import os
 import base64
-import pathlib
 from typing import List, Tuple
 from datetime import datetime
 
