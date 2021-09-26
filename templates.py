@@ -103,8 +103,8 @@ def display_resource(resource: Resource, storage_name: str) -> None:
 
 
 def display_backup(backup: Backup) -> None:
-    typer.echo(f'Name: {backup.name}')
-    typer.echo(f'Path: {backup.path}')
+    typer.echo(f'Orignial name: {backup.name}')
+    typer.echo(f'Original path: {backup.path}')
     typer.echo(f'Url: {backup.url}')
     typer.echo('Versions:')
     for v in backup.versions:
