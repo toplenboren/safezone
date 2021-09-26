@@ -13,7 +13,7 @@ from typing import Optional, List
 
 from oauth_handler.app import launch_oauth_handler_app
 from storage_registry import get_storage_true_name, get_storage_by_name
-from templates import display_metainfo, display_resource_list, display_exception, display_resource
+from templates import display_metainfo, display_resource_list, display_exception, display_resource, display_backup_list
 
 app = typer.Typer()
 
@@ -76,10 +76,9 @@ def list(storage_name: str = typer.Option('yandex', '-s'),
     """
     Lists all resources in STORAGE in DIR
     """
-    resource_list: List[Resource] = savezone.list(storage_name, remote_path, token=token)
-    typer.echo(f"show list of files in {storage_name} by {remote_path}")
-    storage_name = get_storage_true_name(storage_name)
-    display_resource_list(resource_list, storage_name, detailed)
+    backup_list: List[Backup] = savezone.get_backups(storage_name, token=token)
+    storage = get_storage_true_name(storage_name)
+    display_backup_list(backup_list, storage)
 
 
 if __name__ == "__main__":

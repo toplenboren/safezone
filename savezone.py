@@ -1,7 +1,9 @@
 # Savezone command processor
 # Handles savezone related commands, returns raw data, could be used as a library
 import os
+import shutil
 import base64
+
 from typing import List, Tuple
 from datetime import datetime
 
@@ -15,6 +17,7 @@ from models.models import Resource, StorageMetaInfo, Backup
 DELIMITER = '-'
 ENCODING = 'utf-8'
 DATETIME_FORMAT = '%d%m%Y%H%M%S'
+BASE_TEMP_DIRECTORY = 'temp'
 
 
 # todo (toplenboren) DOES NOT WORK ON WIN
@@ -36,7 +39,7 @@ def _get_current_date() -> str:
 
 
 def _parse_date(date) -> datetime:
-    pass
+    return datetime.strptime(date, DATETIME_FORMAT)
 
 
 def _restore_token(storage_name) -> str:
@@ -59,27 +62,27 @@ def _check_resource(resource_path: str) -> bool:
             return True
         except PermissionError or FileNotFoundError:
             return False
-    return False
+    return True
 
 
-def list(storage_name: str, remote_path: str, token: str or None = None) -> List[Resource]:
-    """
-    List all files in DIR in STORAGE
-    :param token: Access token to the storage
-    :param storage_name: Storage name
-    :param remote_path: Path to the resource§
-    :return: List of File objects
-    """
-
-    if not token:
-        token = _restore_token(storage_name)
-
-    if remote_path in ['/', '', None]:
-        remote_path = BASE_DIRECTORY
-
-    storage_class = get_storage_by_name(storage_name)
-    storage: Storage = storage_class(token=token)
-    return storage.list_resources_on_path(remote_path)
+# def list(storage_name: str, remote_path: str, token: str or None = None) -> List[Resource]:
+#     """
+#     List all files in DIR in STORAGE
+#     :param token: Access token to the storage
+#     :param storage_name: Storage name
+#     :param remote_path: Path to the resource§
+#     :return: List of File objects
+#     """
+#
+#     if not token:
+#         token = _restore_token(storage_name)
+#
+#     if remote_path in ['/', '', None]:
+#         remote_path = BASE_DIRECTORY
+#
+#     storage_class = get_storage_by_name(storage_name)
+#     storage: Storage = storage_class(token=token)
+#     return storage.list_resources_on_path(remote_path)
 
 
 def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
@@ -120,6 +123,7 @@ def backup(resource_path: str, remote_path: str, storage_name: str, token: str o
 
     # If remote path is not specified - then make it!
     # /<BASE>/<ID>/<DATETIME>
+    print(f'[{__name__}] Calculating remote file path...')
     if remote_path in ['/', '']:
         resource_id = _encode_resource_id(resource_path)
         current_date = _get_current_date()
@@ -134,11 +138,23 @@ def backup(resource_path: str, remote_path: str, storage_name: str, token: str o
               f'Note: You wont be able to fully use this util using -t argument.'
               f' Consider using automatic method instead (leave the -t empty)')
 
-    storage_class = get_storage_by_name(storage_name)
-    storage: Storage = storage_class(token=token)
-    resource = Resource(True, resource_path)
-    saved_resource = storage.save_resource_to_path(resource, remote_path, overwrite)
-    return Backup(datetime.now(), [saved_resource], storage_name, remote_path)
+    # Archiving the directory or file in order not to do recursive stuff
+    print(f'[{__name__}] Archiving resource...')
+    archived_file_path = f'{BASE_TEMP_DIRECTORY}/{resource_id}'
+    shutil.make_archive(archived_file_path, 'zip', resource_path)
+    archived_file_path += '.zip'
+
+    print(f'[{__name__}] Saving archived file on remote file path...')
+    try:
+        storage_class = get_storage_by_name(storage_name)
+        storage: Storage = storage_class(token=token)
+        resource = Resource(True, archived_file_path)
+        saved_resource = storage.save_resource_to_path(resource, remote_path, overwrite)
+    finally:
+        print(f'[{__name__}] Deleting temp files...')
+        os.unlink(archived_file_path)
+
+    return Backup([saved_resource], storage_name, resource_path)
 
 
 def restore(backup_id: str, path_to_restore: str) -> None:
@@ -151,10 +167,38 @@ def restore(backup_id: str, path_to_restore: str) -> None:
     pass
 
 
-def get_backups(storage_name: str or None = None) -> None:
+def get_backups(storage_name: str, token: str or None = None) -> List[Backup]:
     """
-    Gets all backups, so you are able to restore the specific one
+    Gets all backups that are on the device in human-readable format
     :param storage_name:
     :return:
     """
-    pass
+    if not token:
+        token = _restore_token(storage_name)
+
+    print(f'[{__name__}] Getting storage...')
+    storage_class = get_storage_by_name(storage_name)
+    storage: Storage = storage_class(token=token)
+
+    backups = []
+    print(f'[{__name__}] Getting list of remote backups...')
+    remote_resources = storage.list_resources_on_path(BASE_DIRECTORY)
+    for remote_resource in remote_resources:
+        try:
+            local_resource_path, local_resource_name = _decode_resource_id(remote_resource.name)
+
+            remote_resource_versions = storage.list_resources_on_path(remote_resource.path)
+            backup = Backup(
+                versions=remote_resource_versions,
+                url=remote_resource.url,
+                storage=storage_name,
+                path=local_resource_path,
+                name=local_resource_name,
+            )
+            backups.append(backup)
+
+        except Exception as e:
+            print(f'[{__name__}] Warning: couldn\'t get backups for {remote_resource.name}. Reason: {e}')
+            continue
+
+    return backups

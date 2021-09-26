@@ -30,7 +30,7 @@ class Resource:
     """A resource model"""
 
     def __init__(self, is_file: bool, path: str, size: int or None = None, size_units: str = 'b',
-                 name: str or None = None, url: str or None = None):
+                 name: str or None = None, url: str or None = None, update_time: datetime or None = None):
         self.is_file = is_file
         self.path = path
         self.size = Size(size, size_units)
@@ -38,7 +38,7 @@ class Resource:
         if not self.name and len(self.path.split('/')) > 0:
             self.name = self.path.split('/')[-1]
         self.url = url
-        self.created = None
+        self.updated = update_time
         self.md5 = None
         self.children = None
 
@@ -90,22 +90,27 @@ class StorageMetaInfo:
 class Backup:
     """A backup model"""
 
-    def __init__(self, date: datetime, resources: List[Resource], storage: str, path: str):
+    def __init__(
+            self,
+            versions: List[Resource],
+            storage: str,
+            path: str,
+            url: str or None = None,
+            name: str or None = None
+    ):
         """
-        :param date: A date of the backup
-        :param resources: A list of the resources that have been backed up
+        :param resource: A list of all resource versions that have been backed up
         :param storage: A name of the storage that was responsible for the backup
-        :param path: A path to the backup on the storage
+        :param name A name of the resource that was backed up
+        :param path A path to the resource that was backed up
+        :param url: A url to the remote resource
         """
-        self.date = date
-        self.resources = resources
+        self.versions = versions
         self.storage = storage
+        self.name = name
         self.path = path
+        self.url = url
 
     def _toJson(self) -> str:
         """Serializes the object to JSON"""
-        pass
-
-    def _save(self) -> None:
-        """Saves the object in database"""
         pass

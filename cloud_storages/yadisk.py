@@ -34,7 +34,7 @@ class YadiskStorage(Storage):
         res.size = Size(json.get('size'), 'b') if json.get('size') else None
         res.name = json.get('name')
         res.url = json.get('file')
-        res.created = json.get('created')
+        res.updated = json.get('modified')
         res.md5 = json.get('md5')
         return res
 

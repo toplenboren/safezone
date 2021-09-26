@@ -102,5 +102,17 @@ def display_resource(resource: Resource, storage_name: str) -> None:
     typer.echo(f'Size: {_to_fixed(resource.size.mb)} Mb')
 
 
-def display_backup(backup: Backup, storage_name: str) -> None:
-    pass
+def display_backup(backup: Backup) -> None:
+    typer.echo(f'Name: {backup.name}')
+    typer.echo(f'Path: {backup.path}')
+    typer.echo(f'Url: {backup.url}')
+    typer.echo('Versions:')
+    for v in backup.versions:
+        typer.echo(f'--- {v.updated} Remote path: {v.path}')
+
+
+def display_backup_list(backup_list: List[Backup], storage_name: str):
+    _display_storage(storage_name)
+    for b in backup_list:
+        display_backup(b)
+        typer.echo('')
