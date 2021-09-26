@@ -65,26 +65,6 @@ def _check_resource(resource_path: str) -> bool:
     return True
 
 
-# def list(storage_name: str, remote_path: str, token: str or None = None) -> List[Resource]:
-#     """
-#     List all files in DIR in STORAGE
-#     :param token: Access token to the storage
-#     :param storage_name: Storage name
-#     :param remote_path: Path to the resource§
-#     :return: List of File objects
-#     """
-#
-#     if not token:
-#         token = _restore_token(storage_name)
-#
-#     if remote_path in ['/', '', None]:
-#         remote_path = BASE_DIRECTORY
-#
-#     storage_class = get_storage_by_name(storage_name)
-#     storage: Storage = storage_class(token=token)
-#     return storage.list_resources_on_path(remote_path)
-
-
 def meta(storage_name: str, token: str or None = None) -> StorageMetaInfo:
     """
     Get meta info of the STORAGE (used space + total space)
