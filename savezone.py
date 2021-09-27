@@ -18,6 +18,7 @@ DELIMITER = '-'
 ENCODING = 'utf-8'
 DATETIME_FORMAT = '%d%m%Y%H%M%S'
 BASE_TEMP_DIRECTORY = 'temp'
+BASE_BACKUPS_DIRECTORY = 'restored'
 
 
 # todo (toplenboren) DOES NOT WORK ON WIN
@@ -137,14 +138,33 @@ def backup(resource_path: str, remote_path: str, storage_name: str, token: str o
     return Backup([saved_resource], storage_name, resource_path)
 
 
-def restore(backup_id: str, path_to_restore: str) -> None:
+def restore(backup_path: str, storage_name: str, target: str or None = None, token: str or None = None) -> str:
     """
     Downloads the information from the backup
-    :param backup_id: Backup ID contains the storage_name info and the date. Might be partial or might be a keyword:
-        available keywords are 'last' and 'first'
-    :return:
+    :returns path to the file
     """
-    pass
+    if not token:
+        token = _restore_token(storage_name)
+
+    print(f'[{__name__}] Getting storage...')
+    storage_class = get_storage_by_name(storage_name)
+    storage: Storage = storage_class(token=token)
+
+    # Handle files that were saved on a normal basis
+    remote_path_resource_id = backup_path.split('/')[-2]
+    _, original_name = _decode_resource_id(remote_path_resource_id)
+
+    # Handle files saved under /custom folder
+    # pass
+
+    if target is None:
+        print(f'[{__name__}] Calculating local file path...')
+        target = f"{BASE_BACKUPS_DIRECTORY}/" + original_name
+
+    print(f'[{__name__}] Downloading file...')
+    storage.download_resource(backup_path, target)
+
+    return target
 
 
 def get_backups(storage_name: str, token: str or None = None) -> List[Backup]:

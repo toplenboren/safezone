@@ -2,18 +2,16 @@
 # https://github.com/tiangolo/typer
 
 import savezone
-import os
 import typer
 import webbrowser
 
-from cloud_storages.yadisk import YadiskStorage
 from database.storage import Storage
-from models.models import StorageMetaInfo, Resource, Backup
+from models.models import StorageMetaInfo, Backup
 from typing import Optional, List
 
 from oauth_handler.app import launch_oauth_handler_app
 from storage_registry import get_storage_true_name, get_storage_by_name
-from templates import display_metainfo, display_resource_list, display_exception, display_resource, display_backup_list
+from templates import display_metainfo, display_exception, display_resource, display_backup_list
 
 app = typer.Typer()
 
@@ -51,7 +49,26 @@ def backup(
     :return:
     """
     saved_resource: Backup = savezone.backup(resource, target, storage_name, token, overwrite)
-    display_resource(saved_resource.resources[0], storage_name)
+    display_resource(saved_resource.versions[0], storage_name)
+
+
+@app.command()
+def restore(
+    resource_id: str,
+    storage_name: str = typer.Option('yandex', '-s'),
+    target: str = typer.Option(None, '-t'),
+    token: str or None = None,
+) -> None:
+    """
+    Restores resource from storage \r\n
+    :param resource: A path to the resource
+    :param storage_name: the name of the storage
+    :param target: A path on the local storage to save to, defaults to './restored'
+    :param oauth: An access token to the storage
+    :return:
+    """
+    downloaded_file_path = savezone.restore(resource_id, storage_name, target=target, token=token)
+    print(f'File was downloaded, please check {downloaded_file_path}')
 
 
 @app.command()

@@ -88,7 +88,7 @@ class YadiskStorage(Storage):
             dir_to_create.append(dir)
             path_to_create = '/'.join(dir_to_create)
             response = put_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={path_to_create}',
-                                  token=self.token)
+                                      token=self.token)
             if 199 < response.status_code < 401:
                 print(f'[{__name__}] Created directory {path_to_create}')
                 continue
@@ -106,8 +106,9 @@ class YadiskStorage(Storage):
 
         upload_successful_flag = False
 
-        response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}&overwrite=${overwrite}',
-                                  token=self.token)
+        response = get_with_OAuth(
+            f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}&overwrite=${overwrite}',
+            token=self.token)
         if response.status_code == 200:
             response_read = response.json()
             upload_link = response_read['href']
@@ -131,3 +132,23 @@ class YadiskStorage(Storage):
 
         raise ValueError(f"Something went wrong with YD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
+
+    def download_resource(self, remote_path, local_path) -> str:
+
+        dl_url = None
+
+        response = get_with_OAuth(
+            f'https://cloud-api.yandex.net/v1/disk/resources/download?path={remote_path}',
+            token=self.token
+        )
+        if response.status_code == 200:
+            response_read = response.json()
+            dl_url = response_read.get('href')
+        else:
+            raise ValueError(f"[{__name__}] Something went wrong with YD: Response: "
+                             f"{str(response.status_code)} — {response.json()['message']}")
+
+        file = requests.get(dl_url)
+        open(local_path, 'wb').write(file.content)
+
+        return local_path
