@@ -169,7 +169,7 @@ def restore(backup_path: str, storage_name: str, target: str or None = None, tok
 
 def get_backups(storage_name: str, token: str or None = None) -> List[Backup]:
     """
-    Gets all backups that are on the device in human-readable format
+    Gets all backups that are on the storage in human-readable format
     :param storage_name:
     :return:
     """

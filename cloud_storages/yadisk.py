@@ -96,11 +96,12 @@ class YadiskStorage(Storage):
                 continue
         return
 
-    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool) -> Resource or None:
+    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool, _rec_call:bool = False) -> Resource or None:
         """
         Put an Item to the directory
         :param resource: resource on the local fs
         :param remote_path: string, path to resource on remote fs
+        :param _rec_call: bool, a system parameter, whether or not this function was called as a recursive call
         :return: saved resource or raises exception
         """
 
@@ -108,7 +109,8 @@ class YadiskStorage(Storage):
 
         response = get_with_OAuth(
             f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}&overwrite=${overwrite}',
-            token=self.token)
+            token=self.token
+        )
         if response.status_code == 200:
             response_read = response.json()
             upload_link = response_read['href']
@@ -126,16 +128,18 @@ class YadiskStorage(Storage):
                 return resource_metainfo
             elif upload_successful_flag:
                 return resource
-        # There are no base directory folder
-        elif response.status_code == 409:
-            return self.create_path(remote_path.split('/'))
+
+        # This dir is not present in the storage
+        # We use _rec_call to tell that the next call was made as recursive call, so we don't cause SO
+        elif response.status_code == 409 and not _rec_call:
+            # We don't need to create a folder with the name equal to the filename, so we do [:-1]
+            self.create_path(remote_path.split('/')[:-1])
+            return self.save_resource_to_path(resource, remote_path, overwrite, _rec_call=True)
 
         raise ValueError(f"Something went wrong with YD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
 
     def download_resource(self, remote_path, local_path) -> str:
-
-        dl_url = None
 
         response = get_with_OAuth(
             f'https://cloud-api.yandex.net/v1/disk/resources/download?path={remote_path}',
