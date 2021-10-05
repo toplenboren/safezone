@@ -122,7 +122,13 @@ def backup(resource_path: str, remote_path: str, storage_name: str, token: str o
     # Archiving the directory or file in order not to do recursive stuff
     print(f'[{__name__}] Archiving resource...')
     archived_file_path = f'{BASE_TEMP_DIRECTORY}/{resource_id}'
-    shutil.make_archive(archived_file_path, 'zip', resource_path)
+    # https://stackoverflow.com/questions/30049201/how-to-compress-a-file-with-shutil-make-archive-in-python
+    if os.path.isfile(resource_path):
+        abspath = os.path.abspath(resource_path)
+        head, tail = os.path.split(abspath)
+        shutil.make_archive(archived_file_path, 'zip', head, tail)
+    elif os.path.isdir(resource_path):
+        shutil.make_archive(archived_file_path, 'zip', resource_path)
     archived_file_path += '.zip'
 
     print(f'[{__name__}] Saving archived file on remote file path...')
