@@ -159,12 +159,22 @@ def restore(backup_path: str, storage_name: str, target: str or None = None, tok
 
     if target is None:
         print(f'[{__name__}] Calculating local file path...')
+        dl_target = f"{BASE_BACKUPS_DIRECTORY}/" + original_name + ".zip"
         target = f"{BASE_BACKUPS_DIRECTORY}/" + original_name
+        if os.path.exists(target):
+            raise ValueError(f"Path {target} is not empty. Please deal with it, then try to restore file again")
+    else:
+        raise NotImplementedError()
 
     print(f'[{__name__}] Downloading file...')
-    storage.download_resource(backup_path, target)
+    storage.download_resource(backup_path, dl_target)
 
-    return target
+    try:
+        print(f'[{__name__}] Unpacking file...')
+        shutil.unpack_archive(dl_target, target, 'zip')
+        return target
+    finally:
+        os.unlink(dl_target)
 
 
 def get_backups(storage_name: str, token: str or None = None) -> List[Backup]:
