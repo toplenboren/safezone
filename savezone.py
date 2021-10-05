@@ -198,23 +198,29 @@ def get_backups(storage_name: str, token: str or None = None) -> List[Backup]:
 
     backups = []
     print(f'[{__name__}] Getting list of remote backups...')
-    remote_resources = storage.list_resources_on_path(BASE_DIRECTORY)
-    for remote_resource in remote_resources:
-        try:
-            local_resource_path, local_resource_name = _decode_resource_id(remote_resource.name)
 
-            remote_resource_versions = storage.list_resources_on_path(remote_resource.path)
-            backup = Backup(
-                versions=remote_resource_versions,
-                url=remote_resource.url,
-                storage=storage_name,
-                path=local_resource_path,
-                name=local_resource_name,
-            )
-            backups.append(backup)
+    try:
+        remote_resources = storage.list_resources_on_path(BASE_DIRECTORY)
+        for remote_resource in remote_resources:
+            try:
+                local_resource_path, local_resource_name = _decode_resource_id(remote_resource.name)
 
-        except Exception as e:
-            print(f'[{__name__}] Warning: couldn\'t get backups for {remote_resource.name}. Reason: {e}')
-            continue
+                remote_resource_versions = storage.list_resources_on_path(remote_resource.path)
+                backup = Backup(
+                    versions=remote_resource_versions,
+                    url=remote_resource.url,
+                    storage=storage_name,
+                    path=local_resource_path,
+                    name=local_resource_name,
+                )
+                backups.append(backup)
+
+            except Exception as e:
+                print(f'[{__name__}] Warning: couldn\'t get backups for {remote_resource.name}. Reason: {e}')
+                continue
+    except ValueError as e:
+        if '404' in e.args:
+            print(f'[{__name__}] Can\'t get backups')
+            return []
 
     return backups
