@@ -84,7 +84,15 @@ class GDriveStorage(Storage):
                              f"{str(response.status_code)} — {response.json()['message']}")
 
     def get_meta_info(self) -> StorageMetaInfo:
-
+        response = get_with_OAuth('https://www.googleapis.com/drive/v3/about?fields=*', token=self.token)
+        if response.status_code == 200:
+            response_read = response.json()
+            used_space = response_read.get('storageQuota', {}).get('usage')
+            total_space = response_read.get('storageQuota', {}).get('limit')
+            return StorageMetaInfo(int(used_space), int(total_space))
+        else:
+            raise ValueError(f"Something went wrong with GD: Response: "
+                             f"{str(response.status_code)} — {response.json()['message']}")
 
     def create_path(self, remote_path: List[str]) -> None:
         """
