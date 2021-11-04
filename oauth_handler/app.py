@@ -1,10 +1,10 @@
 import flask
 from flask import Flask, request
 
-from database.storage import Storage
+from database.database import Database
 
 
-def launch_oauth_handler_app(database: Storage, storage_name: str):
+def launch_oauth_handler_app(database: Database, storage_name: str):
     app = Flask(__name__)
 
     @app.route('/')

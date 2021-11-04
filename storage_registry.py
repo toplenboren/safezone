@@ -2,12 +2,18 @@
 
 from cloud_storages.storage import Storage
 from cloud_storages.yadisk import YadiskStorage
+from cloud_storages.gdrive import GDriveStorage
 
 STORAGES = [
     {
         'name': 'Yandex Disk',
         'synonyms': ['yandex', 'yd', 'yadisk', 'Yandex Disk'],
         'storage': YadiskStorage
+    },
+    {
+        'name': 'Google Drive',
+        'synonyms': ['gdrive', 'google_drive', 'google'],
+        'storage': GDriveStorage
     }
 ]
 

@@ -1,8 +1,8 @@
 from typing import List
 
-from .http_shortcuts import *
+from cloud_storages.http_shortcuts import *
 from models.models import StorageMetaInfo, Resource, Size
-from .storage import Storage
+from cloud_storages.storage import Storage
 
 
 class YadiskStorage(Storage):

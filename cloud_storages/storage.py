@@ -30,4 +30,3 @@ class Storage:
         Download a resource from path to folder to local_path and return path to the download
         """
         pass
-

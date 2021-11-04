@@ -22,14 +22,19 @@ def auth(
 ) -> None:
     # Get request URI
     storage = get_storage_by_name(storage_name)
-    request_uri = storage.get_oauth_request_url()
-    # Open OAuth request URI
-    webbrowser.open(request_uri)
-    print('Please continue in web browser')
-    # Start flask web server as daemon
-    database = Storage()
-    launch_oauth_handler_app(database, storage_name)
-    exit(0)
+    # Check if storage has custom auth setup by checking the auth attribute. If no custom auth is specified -> run OAuth
+    use_custom_auth = callable(getattr(storage, "auth", None))
+    if use_custom_auth:
+        database = Database()
+        storage.auth(database)
+    else:
+        # Open OAuth request URI
+        webbrowser.open(storage.get_oauth_request_url())
+        print('Please continue in web browser')
+        # Start flask web server as daemon
+        database = Database()
+        launch_oauth_handler_app(database, storage_name)
+        exit(0)
 
 
 @app.command()
