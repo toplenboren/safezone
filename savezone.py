@@ -10,7 +10,7 @@ from datetime import datetime
 from settings import BASE_DIRECTORY
 from storage_registry import get_storage_by_name
 from cloud_storages.storage import Storage
-from database.storage import Storage as DBStorage
+from database.database import Database as DBStorage
 from models.models import Resource, StorageMetaInfo, Backup
 
 

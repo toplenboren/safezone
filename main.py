@@ -5,7 +5,7 @@ import savezone
 import typer
 import webbrowser
 
-from database.storage import Storage
+from database.database import Database
 from models.models import StorageMetaInfo, Backup
 from typing import Optional, List
 

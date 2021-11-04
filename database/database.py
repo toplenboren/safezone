@@ -3,7 +3,7 @@ from typing import Any
 import pickledb
 
 
-class Storage:
+class Database:
     """A abstraction over KV storage"""
 
     def __init__(self, db_path: str = 'storage.db'):
