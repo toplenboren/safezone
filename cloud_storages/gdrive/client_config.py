@@ -9,3 +9,6 @@ GOOGLE_DRIVE_CONFIG = {
         "redirect_uris": ["urn:ietf:wg:oauth:2.0:oob", "http://localhost"]
     }
 }
+SCOPES = [
+    'https://www.googleapis.com/auth/drive'
+]

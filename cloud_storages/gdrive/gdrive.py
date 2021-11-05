@@ -8,7 +8,7 @@ from cloud_storages.http_shortcuts import *
 from database.database import Database
 from models.models import StorageMetaInfo, Resource, Size
 from cloud_storages.storage import Storage
-from client_config import GOOGLE_DRIVE_CONFIG
+from client_config import GOOGLE_DRIVE_CONFIG, SCOPES
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -51,7 +51,7 @@ class GDriveStorage(Storage):
                              f"{str(response.status_code)} — {response.json()}")
 
     @classmethod
-    # todo (toplenboren) remove databaase argument dependency :(
+    # todo (toplenboren) remove database argument dependency :(
     def auth(cls, db: Database):
         creds = None
         creds_from_db = db.get(GOOGLE_DRIVE)
@@ -211,13 +211,6 @@ class GDriveStorage(Storage):
         open(local_path, 'wb').write(file.content)
 
         return local_path
-
-
-# If modifying these scopes, delete the file token.json.
-SCOPES = [
-    'https://www.googleapis.com/auth/drive'
-]
-
 
 def main():
     storage = GDriveStorage(None)
