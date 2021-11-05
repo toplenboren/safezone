@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import json
 from typing import List
+from functools import lru_cache
 
 from cloud_storages.http_shortcuts import *
 from database.database import Database
@@ -9,18 +10,45 @@ from models.models import StorageMetaInfo, Resource, Size
 from cloud_storages.storage import Storage
 from client_config import GOOGLE_DRIVE_CONFIG
 
-from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 GOOGLE_DRIVE = 'gdrive'
+SAVEZONE_FOLDER_ID = '1fs-iwWCNzQ1R5mGYgHLw6ZqUTA6vRben'
 
 
 class GDriveStorage(Storage):
 
     def __init__(self, token):
         self.token = token
+
+    @lru_cache(maxsize=None)
+    def _get_folder_id_by_name(self, name: str) -> str:
+        """
+        Google drive has a quirk - you can't really use normal os-like paths - first you need to get an ID of the folder
+        This function searches for folders with specified name
+        """
+
+        response = get_with_OAuth(
+            f"https://www.googleapis.com/drive/v3/files",
+            params={
+                'fields': '*',
+                'q': f"name = '{name}' and mimeType = 'application/vnd.google-apps.folder'"
+            },
+            token=self.token
+        )
+
+        if response.status_code == 200:
+            response_as_json = response.json()
+            try:
+                result = response_as_json['files'][0]['id']
+                return result
+            except IndexError as e:
+                raise ValueError(f"Something went wrong with GD: Error: {e}")
+        else:
+            raise ValueError(f"Something went wrong with GD: Response: "
+                             f"{str(response.status_code)} — {response.json()}")
 
     @classmethod
     # todo (toplenboren) remove databaase argument dependency :(
@@ -46,17 +74,18 @@ class GDriveStorage(Storage):
         """
         try:
             is_file = True
-            if json['type'] == 'dir':
+            if 'folder' in json['mimeType']:
                 is_file = False
-            path = json['path']
+            # You don't have pathes in google drive, instead -- you have an id
+            path = json['id']
         except KeyError:
             return None
         res = Resource(is_file, path)
         res.size = Size(json.get('size'), 'b') if json.get('size') else None
         res.name = json.get('name')
-        res.url = json.get('file')
-        res.updated = json.get('modified')
-        res.md5 = json.get('md5')
+        res.url = json.get('webContentLink')
+        res.updated = json.get('modifiedTime')
+        res.md5 = json.get('md5Checksum')
         return res
 
     def list_resources_on_path(self, remote_path: str) -> List[Resource]:
@@ -65,15 +94,23 @@ class GDriveStorage(Storage):
         :param path: path to the resource
         """
 
-        response = get_with_OAuth('https://cloud-api.yandex.net/v1/disk/resources',
-                                  params={'path': remote_path},
-                                  token=self.token)
+        folder_id = self._get_folder_id_by_name(remote_path)
+
+        response = get_with_OAuth(
+            f"https://www.googleapis.com/drive/v3/files",
+            params={
+                'fields': '*',
+                'q': f"'{folder_id}' in parents"
+            },
+            token=self.token
+        )
+
         if response.status_code == 200:
             result = []
             response_as_json = response.json()
-            _embedded_objects = response_as_json['_embedded']['items']
+            files = response_as_json['files']
 
-            for resource in _embedded_objects:
+            for resource in files:
                 res: Resource or None = self._deserialize_resource(resource)
                 if res is not None:
                     result.append(res)
@@ -178,7 +215,7 @@ class GDriveStorage(Storage):
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = [
-    'https://www.googleapis.com/auth/drive.metadata.readonly'
+    'https://www.googleapis.com/auth/drive'
 ]
 
 
@@ -188,27 +225,9 @@ def main():
     storage.auth(db)
 
     authed_storage = GDriveStorage(json.loads(db.get(GOOGLE_DRIVE))['token'])
-    meta = authed_storage.get_meta_info()
+    result = authed_storage.list_resources_on_path('savezone')
 
-    print(meta)
-
-    #
-    # creds = json.loads(db.get(GOOGLE_DRIVE))
-    #
-    # service = build('drive', 'v3', credentials=creds)
-    #
-    # # Call the Drive v3 API
-    # results = service.files().list(
-    #     pageSize=10, fields="nextPageToken, files(id, name)"
-    # ).execute()
-    # items = results.get('files', [])
-    #
-    # if not items:
-    #     print('No files found.')
-    # else:
-    #     print('Files:')
-    #     for item in items:
-    #         print(u'{0} ({1})'.format(item['name'], item['id']))
+    print(result)
 
 
 if __name__ == '__main__':
