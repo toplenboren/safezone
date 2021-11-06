@@ -1,8 +1,8 @@
 # Resolves cloud_storages
 
 from cloud_storages.storage import Storage
-from cloud_storages.yadisk import YadiskStorage
-from cloud_storages.gdrive import GDriveStorage
+from cloud_storages.yadisk.yadisk import YadiskStorage
+from cloud_storages.gdrive.gdrive import GDriveStorage
 
 STORAGES = [
     {

@@ -8,14 +8,13 @@ from cloud_storages.http_shortcuts import *
 from database.database import Database
 from models.models import StorageMetaInfo, Resource, Size
 from cloud_storages.storage import Storage
-from client_config import GOOGLE_DRIVE_CONFIG, SCOPES
+from cloud_storages.gdrive.client_config import GOOGLE_DRIVE_CONFIG, SCOPES
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
-GOOGLE_DRIVE = 'gdrive'
-SAVEZONE_FOLDER_ID = '1fs-iwWCNzQ1R5mGYgHLw6ZqUTA6vRben'
+GOOGLE_DRIVE_DB_KEY = 'google'
 
 
 class GDriveStorage(Storage):
@@ -54,7 +53,7 @@ class GDriveStorage(Storage):
     # todo (toplenboren) remove database argument dependency :(
     def auth(cls, db: Database):
         creds = None
-        creds_from_db = db.get(GOOGLE_DRIVE)
+        creds_from_db = db.get(GOOGLE_DRIVE_DB_KEY)
         if creds_from_db:
             creds = Credentials.from_authorized_user_info(json.loads(creds_from_db), SCOPES)
         if not creds or not creds.valid:
@@ -63,7 +62,7 @@ class GDriveStorage(Storage):
             else:
                 flow = InstalledAppFlow.from_client_config(GOOGLE_DRIVE_CONFIG, SCOPES)
                 creds = flow.run_local_server(port=0)
-            db.set(GOOGLE_DRIVE, creds.to_json())
+            db.set(GOOGLE_DRIVE_DB_KEY, creds.token)
 
     @classmethod
     def _deserialize_resource(cls, json: dict) -> Resource or None:
@@ -217,7 +216,7 @@ def main():
     db = Database('../storage.db')
     storage.auth(db)
 
-    authed_storage = GDriveStorage(json.loads(db.get(GOOGLE_DRIVE))['token'])
+    authed_storage = GDriveStorage(json.loads(db.get(GOOGLE_DRIVE_DB_KEY))['token'])
     result = authed_storage.list_resources_on_path('savezone')
 
     print(result)

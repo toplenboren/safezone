@@ -16,7 +16,7 @@ def _display_storage(storage_name: str) -> None:
     if storage_name == 'Yandex Disk':
         typer.echo(f'Storage Name: {typer.style("Y", fg=typer.colors.RED)}andex Disk')
     else:
-        typer.echo(f'Storage Name: {get_storage_true_name(storage_name)}')
+        typer.echo(f'Storage Name: {storage_name}')
     typer.echo('')
 
 

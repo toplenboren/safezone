@@ -27,6 +27,8 @@ def auth(
     if use_custom_auth:
         database = Database()
         storage.auth(database)
+        print('You can start using the utility now...')
+        exit(0)
     else:
         # Open OAuth request URI
         webbrowser.open(storage.get_oauth_request_url())

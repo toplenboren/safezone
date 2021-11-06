@@ -3,7 +3,7 @@ CLI-utility to backup any directory to cloud
 
 Supports:
 - Yandex Disk with OAuth
-- Google Drive with OAuth (DOES NOT CURRENTLY SUPPORT THIS :( )
+- Google Drive with OAuth
 
 Can:
 - Backup directory or file
