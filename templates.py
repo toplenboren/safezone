@@ -99,7 +99,10 @@ def display_resource(resource: Resource, storage_name: str) -> None:
     typer.secho('Successfully uploaded the resource: ', fg=typer.colors.BRIGHT_GREEN)
     typer.echo(f'Name: {resource.name}')
     typer.echo(f'Path: {resource.path}')
-    typer.echo(f'Size: {_to_fixed(resource.size.mb)} Mb')
+    try:
+        typer.echo(f'Size: {_to_fixed(resource.size.mb)} Mb')
+    except AttributeError:
+        typer.echo(f'Size: unknown')
 
 
 def display_backup(backup: Backup) -> None:

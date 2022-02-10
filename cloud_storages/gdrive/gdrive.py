@@ -1,6 +1,8 @@
 from __future__ import print_function
 
+import datetime
 import json
+from json import JSONDecodeError
 from typing import List
 from functools import lru_cache
 
@@ -86,7 +88,11 @@ class GDriveStorage(Storage):
         creds = None
         creds_from_db = db.get(GOOGLE_DRIVE_DB_KEY)
         if creds_from_db:
-            creds = Credentials.from_authorized_user_info(json.loads(creds_from_db), SCOPES)
+            try:
+                creds = Credentials.from_authorized_user_info(json.loads(creds_from_db), SCOPES)
+            except JSONDecodeError:
+                print("Your credentials have been expired!")
+                creds = None
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
@@ -111,11 +117,11 @@ class GDriveStorage(Storage):
         except KeyError:
             return None
         res = Resource(is_file, path)
-        res.size = Size(json.get('size'), 'b') if json.get('size') else None
+        res.size = None
         res.name = json.get('name')
-        res.url = json.get('webContentLink')
-        res.updated = json.get('modifiedTime')
-        res.md5 = json.get('md5Checksum')
+        res.url = None
+        res.updated = datetime.datetime.now()
+        res.md5 = None
         return res
 
     def list_resources_on_path(self, remote_path: str) -> List[Resource]:
@@ -183,29 +189,35 @@ class GDriveStorage(Storage):
             token=self.token
         )
         if response.status_code == 200:
-            response_read = response.json()
-            upload_link = response_read['href']
+            response_headers = response.headers
+            upload_link = response_headers.get('Location')
 
             with open(resource.path, 'rb') as f:
                 files = f
+
                 response = put_with_OAuth(upload_link, data=files)
                 if 199 < response.status_code < 401:
-                    upload_successful_flag = True
+                    uploaded_file_id = response.json().get('id')
 
-            response = get_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={remote_path}',
-                                      token=self.token)
-            resource_metainfo = self._deserialize_resource(response.json())
+                    metadata = {"name": files.name}
+
+                    metadata_response = patch_with_OAuth(
+                        f'https://www.googleapis.com/drive/v3/files/{uploaded_file_id}',
+                        json=metadata,
+                        token=self.token
+                    )
+                    if 199 < metadata_response.status_code < 401:
+                        upload_successful_flag = True # We cant use file without metadata! even if it is uploaded
+                        file_metadata = metadata_response.json()
+
+            if not upload_successful_flag:
+                raise ValueError("Something went wrong! Could not upload file. Please try again later or contact the developer")
+
+            resource_metainfo = self._deserialize_resource(file_metadata)
             if 199 < response.status_code < 401:
                 return resource_metainfo
             elif upload_successful_flag:
                 return resource
-
-        # # This dir is not present in the storage
-        # # We use _rec_call to tell that the next call was made as recursive call, so we don't cause SO
-        # elif response.status_code == 409 and not _rec_call:
-        #     # We don't need to create a folder with the name equal to the filename, so we do [:-1]
-        #     self.create_path(remote_path.split('/')[:-1])
-        #     return self.save_resource_to_path(resource, remote_path, overwrite, _rec_call=True)
 
         raise ValueError(f"Something went wrong with GD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
