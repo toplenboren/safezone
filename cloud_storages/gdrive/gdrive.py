@@ -41,13 +41,44 @@ class GDriveStorage(Storage):
         if response.status_code == 200:
             response_as_json = response.json()
             try:
+                if len(response_as_json['files']) == 0:
+                    raise FileNotFoundError(f"Directory or file not found")
                 result = response_as_json['files'][0]['id']
                 return result
             except IndexError as e:
                 raise ValueError(f"Something went wrong with GD: Error: {e}")
+        elif response.status_code == 404:
+            raise FileNotFoundError(f"Directory or file not found")
         else:
             raise ValueError(f"Something went wrong with GD: Response: "
                              f"{str(response.status_code)} — {response.json()}")
+
+    def _get_parent_folder_id(self, path: List[str]) -> str:
+        """
+        Resolves and creates necessary directories and returns the last created / fetched directory
+        """
+        ids = []
+        for folder in path:
+            try:
+                id = self._get_folder_id_by_name(folder)
+                ids.append(id)
+                continue
+            except FileNotFoundError:
+                # Getting value error means that there are not Path and we need to create it
+                data = {
+                    'name': folder,
+                    'mimeType': 'application/vnd.google-apps.folder'
+                }
+                if len(ids) > 0:
+                    data['parents'] = [ids[-1]]
+                response = post_with_OAuth('https://www.googleapis.com/drive/v3/files', token=self.token, json=data)
+                if response.status_code == 200:
+                    response_read = response.json()
+                    ids.append(response_read.get('id'))
+                else:
+                    raise ValueError(f"Something went wrong with GD: Response: "
+                                     f"{str(response.status_code)} — {response.json()['message']}")
+        return ids[-1]
 
     @classmethod
     # todo (toplenboren) remove database argument dependency :(
@@ -130,27 +161,8 @@ class GDriveStorage(Storage):
             raise ValueError(f"Something went wrong with GD: Response: "
                              f"{str(response.status_code)} — {response.json()['message']}")
 
-    def create_path(self, remote_path: List[str]) -> None:
-        """
-        Creates the remote path on yandex disk
-        """
-        print(f'[{__name__}] Trying to create directory {"/".join(remote_path)} on remote...')
-
-        dir_to_create = []
-
-        for dir in remote_path:
-            dir_to_create.append(dir)
-            path_to_create = '/'.join(dir_to_create)
-            response = put_with_OAuth(f'https://cloud-api.yandex.net/v1/disk/resources?path={path_to_create}',
-                                      token=self.token)
-            if 199 < response.status_code < 401:
-                print(f'[{__name__}] Created directory {path_to_create}')
-                continue
-            elif response.status_code == 409 and 'уже существует' in response.json().get('message', ''):
-                continue
-        return
-
-    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool, _rec_call:bool = False) -> Resource or None:
+    def save_resource_to_path(self, resource: Resource, remote_path: str, overwrite: bool,
+                              _rec_call: bool = False) -> Resource or None:
         """
         Put an Item to the directory
         :param resource: resource on the local fs
@@ -161,8 +173,13 @@ class GDriveStorage(Storage):
 
         upload_successful_flag = False
 
-        response = get_with_OAuth(
-            f'https://cloud-api.yandex.net/v1/disk/resources/upload?path={remote_path}&overwrite=${overwrite}',
+        parent = self._get_parent_folder_id(remote_path.split('/'))
+
+        response = post_with_OAuth(
+            f'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+            json={
+                "parents": [parent]
+            },
             token=self.token
         )
         if response.status_code == 200:
@@ -183,14 +200,14 @@ class GDriveStorage(Storage):
             elif upload_successful_flag:
                 return resource
 
-        # This dir is not present in the storage
-        # We use _rec_call to tell that the next call was made as recursive call, so we don't cause SO
-        elif response.status_code == 409 and not _rec_call:
-            # We don't need to create a folder with the name equal to the filename, so we do [:-1]
-            self.create_path(remote_path.split('/')[:-1])
-            return self.save_resource_to_path(resource, remote_path, overwrite, _rec_call=True)
+        # # This dir is not present in the storage
+        # # We use _rec_call to tell that the next call was made as recursive call, so we don't cause SO
+        # elif response.status_code == 409 and not _rec_call:
+        #     # We don't need to create a folder with the name equal to the filename, so we do [:-1]
+        #     self.create_path(remote_path.split('/')[:-1])
+        #     return self.save_resource_to_path(resource, remote_path, overwrite, _rec_call=True)
 
-        raise ValueError(f"Something went wrong with YD: Response: "
+        raise ValueError(f"Something went wrong with GD: Response: "
                          f"{str(response.status_code)} — {response.json().get('message', '')}")
 
     def download_resource(self, remote_path, local_path) -> str:
@@ -210,6 +227,7 @@ class GDriveStorage(Storage):
         open(local_path, 'wb').write(file.content)
 
         return local_path
+
 
 def main():
     storage = GDriveStorage(None)
